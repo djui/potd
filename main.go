@@ -2,78 +2,76 @@ package main
 
 import (
 	"fmt"
-	"github.com/kurrik/oauth1a"
-	"github.com/kurrik/twittergo"
+	"github.com/ChimeraCoder/anaconda"
 	"io/ioutil"
 	"log"
-	"net/http"
+	"net/url"
 	"strings"
 )
 
-const credentialsFilename = "CREDENTIALS"
-
-type credentials struct {
-	consumerKey       string
-	consumerSecret    string
-	accessToken       string
+type appCredentials struct {
+	consumerKey string
+	consumerSecret string
+	accessToken string
 	accessTokenSecret string
 }
+
+const credentialsFilename = "CREDENTIALS"
 
 
 func init() {
 	log.SetFlags(0)
 }	
 
-func loadCredentials(credentialsFilename string) (cred credentials, err error) {
-	c, err := ioutil.ReadFile(credentialsFilename)
+func loadCredentials(filename string) (credentials appCredentials, err error) {
+	c, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return
 	}
 	lines := strings.Split(string(c), "\n")
-	cred = credentials{
-		consumerKey:       lines[0],
-		consumerSecret:    lines[1],
-		accessToken:       lines[2],
+	return appCredentials{
+		consumerKey: lines[0],
+		consumerSecret: lines[1],
+		accessToken: lines[2],
 		accessTokenSecret: lines[3],
-	}
-	return
+	}, nil
 }
 
-func newTwitterClient(cred credentials) *twittergo.Client {
-	config := &oauth1a.ClientConfig{
-		ConsumerKey:    cred.consumerKey,
-		ConsumerSecret: cred.consumerSecret,
-	}
-	auth := oauth1a.NewAuthorizedConfig(cred.accessToken, cred.accessTokenSecret)
-	return twittergo.NewClient(config, auth)	
+func getTimeline(client *anaconda.TwitterApi, screenName string) (tweets []anaconda.Tweet, err error) {
+	query := url.Values{}
+	query.Set("screen_name", screenName)
+	query.Set("count", "5")
+	query.Set("trim_user", "true")
+	query.Set("exclude_replies", "true")
+	query.Set("include_rts", "true")
+	return client.GetUserTimeline(query)
 }
 
 func main() {
-	cred, err := loadCredentials(credentialsFilename)
-	if err != nil {
-		log.Fatal("Could not parse %s file: %v\n", credentialsFilename, err)
-	}
-	client := newTwitterClient(cred)
+	var credentials appCredentials
+	var err error
 	
-	req, _ := http.NewRequest("GET", "/1.1/account/verify_credentials.json", nil)
-	resp, err := client.SendRequest(req)
-	if err != nil {
-		log.Fatal("Could not send request: %v\n", err)
+	if credentials, err = loadCredentials(credentialsFilename); err != nil {
+		log.Fatalf("Could not parse %s file: %v\n", credentialsFilename, err)
 	}
+	anaconda.SetConsumerKey(credentials.consumerKey)
+	anaconda.SetConsumerSecret(credentials.consumerSecret)
+	//client := anaconda.NewTwitterApi(credentials.accessToken, credentials.accessTokenSecret)
+	client := anaconda.NewTwitterApi("", "")
 	
-	user := &twittergo.User{}
-	err = resp.Parse(user)
-	if err != nil {
-		log.Fatal("Problem parsing response: %v\n", err)
+	var tweets []anaconda.Tweet
+	if tweets, err = getTimeline(client, "onepaperperday"); err != nil {
+		log.Fatal(err)
 	}
 	
-	fmt.Printf("ID:                   %v\n", user.Id())
-	fmt.Printf("Name:                 %v\n", user.Name())
-	if resp.HasRateLimit() {
-		fmt.Printf("Rate limit:           %v\n", resp.RateLimit())
-		fmt.Printf("Rate limit remaining: %v\n", resp.RateLimitRemaining())
-		fmt.Printf("Rate limit reset:     %v\n", resp.RateLimitReset())
-	} else {
-		fmt.Printf("Could not parse rate limit from response.\n")
+	for _, tweet := range tweets {
+		var text string
+		if retweet := tweet.RetweetedStatus; retweet != nil {
+			text = retweet.Text
+		} else {
+			text = tweet.Text
+		}
+		text = strings.Replace(text, "\n", " ", -1)
+		fmt.Printf("Text: %v\n", text)
 	}
 }
