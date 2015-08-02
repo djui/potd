@@ -15,3 +15,8 @@ paper tweet.
 # Build
 
     $ go build
+
+A `CREDENTIALS` file next to the executable with Twitter API credentials is required.
+
+    $ echo -e "$CONSUMER_KEY\n$CONSUMER_SECRET\n\n\n" > CREDENTIALS
+
