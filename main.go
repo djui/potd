@@ -27,6 +27,8 @@ type parsedTweet struct {
 
 const configFilename = ".potdrc"
 const shouldDebug = true
+const lineIndentation = 2
+const maxLineLength = 50 - lineIndentation
 
 
 func init() {
@@ -97,6 +99,28 @@ func parseTweet(tweet anaconda.Tweet) (t parsedTweet, err error) {
 	}, nil
 }
 
+func breakLongLine(input string, lineLen int) string {
+	fields := strings.Fields(input)
+	output := ""
+	tmpLen := 0
+	
+	for _, field := range fields {
+		fieldLen := len(field)
+		tmpLen += fieldLen + 1
+		if tmpLen >= lineLen {
+			output += "\n"
+			tmpLen = fieldLen
+		}
+		output += field + " "
+	}
+
+	return output
+}
+
+func indentMultilines(input string, indentLen int) string {
+	return strings.Repeat(" ", indentLen) + strings.Replace(input, "\n", "\n  ", -1)
+}
+
 func main() {
 	var configFilepath string
 	if dir, err := filepath.Abs(filepath.Dir(os.Args[0])); err != nil {
@@ -131,5 +155,6 @@ func main() {
 		tweet = onecspaperadayTweet
 	}
 
-	fmt.Printf("%s %s\n", tweet.text, tweet.url)
+	output := fmt.Sprintf("%s %s\n", tweet.text, tweet.url)
+	fmt.Println(indentMultilines(breakLongLine(output, maxLineLength), lineIndentation))
 }
