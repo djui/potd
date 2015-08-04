@@ -103,7 +103,7 @@ func breakLongLine(input string, lineLen int) string {
 	fields := strings.Fields(input)
 	output := ""
 	tmpLen := 0
-	
+
 	for _, field := range fields {
 		fieldLen := len(field)
 		tmpLen += fieldLen + 1
@@ -128,7 +128,7 @@ func main() {
 	} else {
 		configFilepath = filepath.Join(dir, configFilename)
 	}
-	
+
 	credentials, err := loadCredentials(configFilepath)
 	if err != nil {
 		log.Fatalf("Could not parse %s file: %v\n", configFilename, err)
@@ -142,7 +142,7 @@ func main() {
 	onecspaperadayTweets, err2 := getLatestTweets(client, "onecspaperaday", 1)
 	debug(err1, err2)
 	checkArgument(len(onepaperperdayTweets) == 0 || len(onecspaperadayTweets) == 0)
-	
+
 	onepaperperdayTweet, err1 := parseTweet(onepaperperdayTweets[0])
 	onecspaperadayTweet, err2 := parseTweet(onecspaperadayTweets[0])
 	debug(err1, err2)
