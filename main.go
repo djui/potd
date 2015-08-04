@@ -1,6 +1,7 @@
 package main
 
 import (
+	"path/filepath"
 	"fmt"
 	"github.com/ChimeraCoder/anaconda"
 	"io/ioutil"
@@ -24,7 +25,7 @@ type parsedTweet struct {
 	url string
 }
 
-const credentialsFilename = "CREDENTIALS"
+const configFilename = ".potdrc"
 const shouldDebug = true
 
 
@@ -97,9 +98,16 @@ func parseTweet(tweet anaconda.Tweet) (t parsedTweet, err error) {
 }
 
 func main() {
-	credentials, err := loadCredentials(credentialsFilename)
+	var configFilepath string
+	if dir, err := filepath.Abs(filepath.Dir(os.Args[0])); err != nil {
+		configFilepath = filepath.Join(".", configFilename)
+	} else {
+		configFilepath = filepath.Join(dir, configFilename)
+	}
+	
+	credentials, err := loadCredentials(configFilepath)
 	if err != nil {
-		log.Fatalf("Could not parse %s file: %v\n", credentialsFilename, err)
+		log.Fatalf("Could not parse %s file: %v\n", configFilename, err)
 	}
 
 	anaconda.SetConsumerKey(credentials.consumerKey)
