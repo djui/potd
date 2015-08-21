@@ -30,6 +30,7 @@ const lineIndentation = 2
 const maxLineLength = 50 - lineIndentation
 
 var accounts = []string{
+	"adriancolyer", // "themorningpaper",
 	"onepaperperday",
 	"onecspaperaday",
 }
